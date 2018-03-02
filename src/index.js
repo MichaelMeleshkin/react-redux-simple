@@ -1,6 +1,24 @@
-import { createStore } from 'redux';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { Provider } from 'react-redux';
+import { createStore, applyMiddleware } from 'redux';
+import { composeWithDevTools } from 'redux-devtools-extension';
+import thunk from 'redux-thunk';
+import { BrowserRouter, Route, Link } from 'react-router-dom';
+import { ConnectedRouter, routerMiddleware } from 'react-router-redux';
+import createHistory from 'history/createBrowserHistory';
 
-function todoList(state = [], action) {
+import './index.css';
+import App from './components/app';
+import About from './components/about';
+
+/*let todos = [
+    'Create todo list',
+    'Create first task',
+    'Create complete first task'
+];
+
+function todoList(state = todos, action) {
     if (action.type === 'ADD_TODO') {
         return [
             ...state,
@@ -9,23 +27,23 @@ function todoList(state = [], action) {
     } else {
         return state;
     }
-}
+}*/
+import reducer from './reducers/reducer';
+const history = createHistory();
+const middleware = routerMiddleware(history);
 
-const store = createStore(todoList);
+const simpleStore = createStore(reducer, composeWithDevTools(applyMiddleware(thunk, middleware)));
+// const simpleStore = createStore(todoList, window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__());
+// const simpleStore = createStore(reducer);
 
-store.subscribe(() => {
-    console.log('subscribe', store.getState());
-    let root = document.querySelector('#root');
-    root.innerHTML = '';
-    let list = document.createElement('ul');
-    store.getState().map((item) => {
-        let listItem = document.createElement('li');
-        listItem.textContent = item;
-        list.appendChild(listItem);
-    });
-    root.appendChild(list);
-});
-
-store.dispatch({ type: 'ADD_TODO', payload: 'Create todo list'});
-store.dispatch({ type: 'ADD_TODO', payload: 'Create first task'});
-store.dispatch({ type: 'ADD_TODO', payload: 'Create complete first task'});
+ReactDOM.render(
+    <Provider store={simpleStore}>
+        <ConnectedRouter history={history}>
+            <div>
+                <Route exact path='/' component={App}/>
+                <Route path='/about' component={About}/>
+            </div>
+        </ConnectedRouter>
+    </Provider>,
+    document.getElementById('root')
+);
