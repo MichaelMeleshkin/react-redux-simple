@@ -8,6 +8,9 @@ export default function todos(state = [], action) {
         return [
             ...action.payload
         ];
+    } else if (action.type === 'TODOS_ERROR') {
+        console.error(action.payload);
+        return state;
     } else if (action.type === 'REMOVE_TODO') {
         return state;
     } else {

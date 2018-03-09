@@ -15,6 +15,10 @@ class App extends Component {
         this.props.onFilterTodo(this.todoInput.value);
     }
 
+    componentDidMount() {
+        this.props.onGetTodos();
+    }
+
     render() {
         console.log(this.props.ownProps);
         return (
@@ -28,21 +32,14 @@ class App extends Component {
                        onKeyUp={this.filterTodo.bind(this)}/>
                 <button onClick={this.addTodo.bind(this)}>Create todo</button>
                 <ul>
-                    {this.props.todos.map((todo, index) =>
+                    {this.props.todos.sort().map((todo, index) =>
                         <li key={index}>{todo}</li>
                     )}
                 </ul>
-                <button onClick={this.props.onGetTodos}>Get todos</button>
             </div>
         )
     }
 }
-
-const tasks = [
-    'Create todo list',
-    'Create first task',
-    'Create complete first task'
-];
 
 export default connect(
     (state, ownProps) => ({
@@ -51,7 +48,24 @@ export default connect(
     }),
     dispatch => ({
         onAddTodo: (todo) => {
-            dispatch({ type: 'ADD_TODO', payload: todo });
+            const addTodos = () => {
+                return dispatch => {
+                    return fetch('/insert', {
+                        method: "POST",
+                        body: JSON.stringify({todo: todo}),
+                        headers: {'Content-Type': 'application/json'}
+                    })
+                    .then((response) => {
+                        let q = 1;
+                        if(response.status == 200){
+                            dispatch({ type: 'ADD_TODO', payload: todo });
+                        } else {
+                            dispatch({ type: 'TODOS_ERROR', payload: "addTodos error" })
+                        }
+                    });
+                }
+            };
+            dispatch(addTodos());
         },
         onFilterTodo: (todo) => {
             dispatch({ type: 'FILTER_TODO', payload: todo });
@@ -62,9 +76,23 @@ export default connect(
         onGetTodos: () => {
             const getTodos = () => {
                 return dispatch => {
-                    setTimeout(() => {
-                        dispatch({ type: 'FETCH_TODOS', payload: tasks })
-                    }, 3000)
+                    return fetch('/fetch', {
+                        method: "POST",
+                        headers: {'Content-Type': 'application/json'}
+                    })
+                    .then((response) => {
+                        if(response.status == 200){
+                            let fetchedTodos = [];
+                            response.json().then((todos) => {
+                                todos.map((todo) => {
+                                    fetchedTodos.push(todo.todo);
+                                });
+                                dispatch({ type: 'FETCH_TODOS', payload: fetchedTodos })
+                            });
+                        } else {
+                            dispatch({ type: 'TODOS_ERROR', payload: "getTodos error" })
+                        }
+                    });
                 }
             };
             dispatch(getTodos());
